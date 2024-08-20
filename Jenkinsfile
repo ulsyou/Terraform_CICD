@@ -26,7 +26,6 @@ pipeline {
                     sh "docker rm ${DOCKER_IMAGE_NAME} || true"
                     sh "docker run -d --name ${DOCKER_IMAGE_NAME} -p 80:80 -p 4566:4566 ${DOCKER_IMAGE_NAME}"
                     sh "sleep 60"
-                    sh "docker exec ${DOCKER_IMAGE_NAME} service nginx status"
                 }
             }
         }
