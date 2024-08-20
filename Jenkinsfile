@@ -10,10 +10,31 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/ulsyou/Terraform_CICD' 
+                git 'https://github.com/ulsyou/Terraform_CICD'
             }
         }
         
+        stage('Build Docker Image') {
+            steps {
+                script {
+             
+                    docker.build('my-web-server')
+                }
+            }
+        }
+
+        stage('Test Docker Container') {
+            steps {
+                script {
+                  
+                    def app = docker.image('my-web-server')
+                    app.inside {
+                        sh 'curl http://localhost'
+                    }
+                }
+            }
+        }
+
         stage('Terraform Init') {
             steps {
                 sh 'tflocal init'
@@ -35,8 +56,10 @@ pipeline {
         stage('Deploy Web') {
             steps {
                 script {
-                    def instanceIp = sh(script: "tflocal output -raw public_ip", returnStdout: true).trim()
-                    sh "scp -o StrictHostKeyChecking=no -i /path/to/your/key.pem index.html ubuntu@${instanceIp}:/var/www/html/"
+                
+                    def containerId = sh(script: "docker ps -q --filter 'name=localstack_ec2'", returnStdout: true).trim()
+        
+                    sh "docker cp index.html ${containerId}:/var/www/html/"
                 }
             }
         }
