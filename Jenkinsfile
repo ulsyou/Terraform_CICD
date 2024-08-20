@@ -1,76 +1,67 @@
 pipeline {
     agent any
-
     environment {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
-        AWS_DEFAULT_REGION = 'us-east-1a'
+        AWS_DEFAULT_REGION = 'us-east-1'
+        DOCKER_IMAGE_NAME = 'my-localstack-nginx'
     }
-
     stages {
         stage('Checkout') {
             steps {
                 git 'https://github.com/ulsyou/Terraform_CICD'
             }
         }
-
-        stage('Stop and Remove Existing LocalStack') {
-            steps {
-                sh 'docker stop localstack-main || true'
-                sh 'docker rm localstack-main || true'
-            }
-        }
-
-        stage('Start LocalStack') {
-            steps {
-                sh 'docker-compose -f docker-compose.yml up -d'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build('my-web-server')
+                    docker.build("${DOCKER_IMAGE_NAME}")
                 }
             }
         }
-
-        stage('Test Docker Container') {
+        stage('Run LocalStack Container') {
             steps {
                 script {
-                    def app = docker.image('my-web-server')
-                    app.inside {
-                        sh 'curl https://localhost.localstack.cloud:4566'
+                    sh "docker stop ${DOCKER_IMAGE_NAME} || true"
+                    sh "docker rm ${DOCKER_IMAGE_NAME} || true"
+                    sh "docker run -d --name ${DOCKER_IMAGE_NAME} -p 80:80 -p 4566:4566 ${DOCKER_IMAGE_NAME}"
+                    // Đợi LocalStack khởi động
+                    sh 'sleep 30'
+                }
+            }
+        }
+        stage('Terraform Init') {
+            steps {
+                sh 'terraform init'
+            }
+        }
+        stage('Terraform Plan') {
+            steps {
+                sh 'terraform plan -out=tfplan'
+            }
+        }
+        stage('Terraform Apply') {
+            steps {
+                sh 'terraform apply -auto-approve tfplan'
+            }
+        }
+        stage('Test Deployment') {
+            steps {
+                script {
+                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost', returnStdout: true).trim()
+                    if (response == "200") {
+                        echo "Deployment successful! Website is accessible."
+                    } else {
+                        error "Deployment failed. HTTP status code: ${response}"
                     }
                 }
             }
         }
-
-        stage('Terraform Init') {
-            steps {
-                sh 'tflocal init'
-            }
-        }
-
-        stage('Terraform Plan') {
-            steps {
-                sh 'tflocal plan -out=tfplan'
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                sh 'tflocal apply -input=false tfplan'
-            }
-        }
-
-        stage('Deploy Web') {
-            steps {
-                script {
-                    def instanceIp = '10.153.21.207'
-                    sh "docker cp index.html ${instanceIp}:/var/www/html/"
-                }
-            }
+    }
+    post {
+        always {
+            sh "docker stop ${DOCKER_IMAGE_NAME} || true"
+            sh "docker rm ${DOCKER_IMAGE_NAME} || true"
         }
     }
 }
