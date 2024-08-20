@@ -57,9 +57,9 @@ pipeline {
             steps {
                 script {
                 
-                    def containerId = sh(script: "docker ps -q --filter 'name=localstack_ec2'", returnStdout: true).trim()
+                    def instanceIp = '10.153.21.207'
         
-                    sh "docker cp index.html ${containerId}:/var/www/html/"
+                    sh "docker cp index.html ${instanceIp}:/var/www/html/"
                 }
             }
         }
