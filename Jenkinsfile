@@ -17,7 +17,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-             
                     docker.build('my-web-server')
                 }
             }
@@ -26,7 +25,6 @@ pipeline {
         stage('Test Docker Container') {
             steps {
                 script {
-                  
                     def app = docker.image('my-web-server')
                     app.inside {
                         sh 'curl http://localhost'
@@ -56,9 +54,7 @@ pipeline {
         stage('Deploy Web') {
             steps {
                 script {
-                
                     def instanceIp = '10.153.21.207'
-        
                     sh "docker cp index.html ${instanceIp}:/var/www/html/"
                 }
             }
