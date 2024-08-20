@@ -16,4 +16,4 @@ COPY index.html /var/www/html/
 EXPOSE 80
 
 # Chạy Nginx và LocalStack
-CMD ["sh", "-c", "nginx -g 'daemon off;' & localstack start"]
+CMD service nginx start && localstack start
