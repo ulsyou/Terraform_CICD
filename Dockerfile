@@ -12,8 +12,8 @@ COPY default /etc/nginx/sites-available/default
 # Copy trang web vào thư mục /var/www/html
 COPY index.html /var/www/html/
 
-# Expose cổng 80
-EXPOSE 80
+# Expose cổng 80 và 4566 (cho LocalStack)
+EXPOSE 80 4566
 
 # Chạy Nginx và LocalStack
-CMD service nginx start && localstack start
+CMD service nginx start && localstack start --host
