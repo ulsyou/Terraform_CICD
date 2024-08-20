@@ -13,7 +13,7 @@ pipeline {
                 git 'https://github.com/ulsyou/Terraform_CICD'
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -27,7 +27,7 @@ pipeline {
                 script {
                     def app = docker.image('my-web-server')
                     app.inside {
-                        sh 'curl http://localhost'
+                        sh 'curl http://localhost.localstack.cloud'
                     }
                 }
             }
