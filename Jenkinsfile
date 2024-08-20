@@ -4,13 +4,19 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
-        AWS_DEFAULT_REGION = 'us-east-1'
+        AWS_DEFAULT_REGION = 'us-east-1a'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git 'https://github.com/ulsyou/Terraform_CICD'
+            }
+        }
+
+        stage('Start LocalStack') {
+            steps {
+                sh 'docker-compose -f docker-compose.yml up -d'
             }
         }
 
