@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'lab-server'
-    }
+    agent any
     environment {
         appUser = "shoeshop"
         appName = "shoe-ShoppingCart"
