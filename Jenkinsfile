@@ -13,11 +13,10 @@ pipeline {
                 git 'https://github.com/ulsyou/Terraform_CICD'
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                 script {
-             
                     docker.build('my-web-server')
                 }
             }
@@ -26,10 +25,9 @@ pipeline {
         stage('Test Docker Container') {
             steps {
                 script {
-                  
                     def app = docker.image('my-web-server')
                     app.inside {
-                        sh 'curl http://localhost'
+                        sh 'curl https://localhost.localstack.cloud:4566'
                     }
                 }
             }
@@ -56,10 +54,8 @@ pipeline {
         stage('Deploy Web') {
             steps {
                 script {
-                
-                    def containerId = sh(script: "docker ps -q --filter 'name=localstack_ec2'", returnStdout: true).trim()
-        
-                    sh "docker cp index.html ${containerId}:/var/www/html/"
+                    def instanceIp = '10.153.21.207'
+                    sh "docker cp index.html ${instanceIp}:/var/www/html/"
                 }
             }
         }
