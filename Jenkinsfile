@@ -14,6 +14,13 @@ pipeline {
             }
         }
 
+        stage('Stop and Remove Existing LocalStack') {
+            steps {
+                sh 'docker stop localstack-main || true'
+                sh 'docker rm localstack-main || true'
+            }
+        }
+
         stage('Start LocalStack') {
             steps {
                 sh 'docker-compose -f docker-compose.yml up -d'
