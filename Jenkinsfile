@@ -25,7 +25,8 @@ pipeline {
                     sh "docker stop ${DOCKER_IMAGE_NAME} || true"
                     sh "docker rm ${DOCKER_IMAGE_NAME} || true"
                     sh "docker run -d --name ${DOCKER_IMAGE_NAME} -p 80:80 -p 4566:4566 ${DOCKER_IMAGE_NAME}"
-                    // Đợi LocalStack khởi động
+                    sh "sleep 30"
+                    sh "docker exec ${DOCKER_IMAGE_NAME} service nginx status"
                     sh 'sleep 30'
                 }
             }
@@ -48,7 +49,7 @@ pipeline {
         stage('Test Deployment') {
             steps {
                 script {
-                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost', returnStdout: true).trim()
+                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:4566', returnStdout: true).trim()
                     if (response == "200") {
                         echo "Deployment successful! Website is accessible."
                     } else {
