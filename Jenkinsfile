@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
-        AWS_DEFAULT_REGION = 'us-east-1'
+        AWS_DEFAULT_REGION = 'us-east-1a'
     }
 
     stages {
@@ -27,7 +27,8 @@ pipeline {
                 script {
                     def app = docker.image('my-web-server')
                     app.inside {
-                        sh 'curl http://localhost.localstack.cloud'
+                        sh 'curl https://localhost.localstack.cloud:4566'
+'
                     }
                 }
             }
