@@ -5,7 +5,7 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
         DOCKER_IMAGE_NAME = 'my-localstack-nginx'
-        PATH = "$HOME/.local/bin:$PATH" // Cập nhật PATH để tìm AWS CLI
+        PATH = "$HOME/.local/bin:$PATH" 
     }
     stages {
         stage('Checkout') {
@@ -36,6 +36,7 @@ pipeline {
                     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                     unzip -o awscliv2.zip
                     ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
+                    echo "export PATH=/var/lib/jenkins/.local/bin:$PATH" >> ~/.bashrc
                     export PATH=/var/lib/jenkins/.local/bin:$PATH
                     aws --version
                 '''
@@ -85,7 +86,7 @@ pipeline {
                     if (response == "200") {
                         echo "Deployment successful! Website is accessible at http://${containerIp}"
                     } else {
-                        sh "docker logs my-localstack-nginx"
+                        sh "docker logs ${DOCKER_IMAGE_NAME}"
                         error "Deployment failed. HTTP status code: ${response}"
                     }
                 }
