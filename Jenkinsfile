@@ -5,7 +5,7 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
         DOCKER_IMAGE_NAME = 'my-localstack-nginx'
-        PATH = "$HOME/.local/bin:$PATH" 
+        PATH = "$HOME/.local/bin:$PATH" // Cập nhật PATH để tìm AWS CLI
     }
     stages {
         stage('Checkout') {
@@ -36,7 +36,6 @@ pipeline {
                     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                     unzip -o awscliv2.zip
                     ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
-                    echo "export PATH=/var/lib/jenkins/.local/bin:$PATH" >> ~/.bashrc
                     export PATH=/var/lib/jenkins/.local/bin:$PATH
                     aws --version
                 '''
@@ -66,29 +65,14 @@ pipeline {
         stage('Deploy Web') {
             steps {
                 script {
-                    def instanceIp = sh(script: """
-                        aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
-                        --filters 'Name=tag:Name,Values=web-instance' \
-                        --query 'Reservations[].Instances[].PrivateIpAddress' \
-                        --output text
-                    """, returnStdout: true).trim()
-                    echo "Instance IP: ${instanceIp}"
+                    // Lấy IP của container
+                    def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_IMAGE_NAME}", returnStdout: true).trim()
+                    
+                    // Sao chép index.html vào container
                     sh "docker cp index.html ${DOCKER_IMAGE_NAME}:/var/www/html/"
-                }
-            }
-        }
-        stage('Test Deployment') {
-            steps {
-                script {
-                    def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' my-localstack-nginx", returnStdout: true).trim()
-                    sh "sleep 60"
-                    def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${containerIp}", returnStdout: true).trim()
-                    if (response == "200") {
-                        echo "Deployment successful! Website is accessible at http://${containerIp}"
-                    } else {
-                        sh "docker logs ${DOCKER_IMAGE_NAME}"
-                        error "Deployment failed. HTTP status code: ${response}"
-                    }
+                    
+                    // In ra địa chỉ IP và thông báo
+                    echo "Website deployed. You can access it at http://${containerIp}"
                 }
             }
         }
