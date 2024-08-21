@@ -62,16 +62,13 @@ pipeline {
                 sh 'terraform apply -auto-approve tfplan'
             }
         }
-        stage('Deploy Web') {
+        stage('Deploy') {
             steps {
                 script {
-                    // Lấy IP của container
                     def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_IMAGE_NAME}", returnStdout: true).trim()
                     
-                    // In ra địa chỉ IP và thông báo
-                    echo "Website deployed. You can access it at http://${containerIp}:8000"
+                    echo "Website deployed at http://${containerIp}:8000"
 
-                    // Kiểm tra log container
                     sh "docker logs ${DOCKER_IMAGE_NAME}"
                 }
             }
