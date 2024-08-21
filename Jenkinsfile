@@ -53,16 +53,17 @@ pipeline {
                 sh 'tflocal apply -auto-approve tfplan'
             }
         }
-        stage('Deploy to S3 via LocalStack') {
+        stage('Deploy') {
             steps {
                 script {
                     sh '''
-                        echo "Hello from LocalStack S3 Bucket" > index.html
+                        aws --endpoint-url=http://localhost:4566 s3 rb s3://my-website-bucket --force || true
+        
                         aws --endpoint-url=http://localhost:4566 s3 mb s3://my-website-bucket
+        
                         aws --endpoint-url=http://localhost:4566 s3 cp index.html s3://my-website-bucket/index.html
                     '''
-                    
-                    echo "Website deployed to S3. Access it via CloudFront or S3 URL"
+                    echo "Website deployed to S3 at URL: http://localhost:4566/my-website-bucket/index.html"
                 }
             }
         }
