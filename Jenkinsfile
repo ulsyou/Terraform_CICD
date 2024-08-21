@@ -79,11 +79,15 @@ pipeline {
         stage('Test Deployment') {
             steps {
                 script {
-                    def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_IMAGE_NAME}", returnStdout: true).trim()
+                    def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' my-localstack-nginx", returnStdout: true).trim()
+                    // Thêm thời gian chờ trước khi thực hiện kiểm tra
+                    sh "sleep 10"
                     def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${containerIp}", returnStdout: true).trim()
                     if (response == "200") {
                         echo "Deployment successful! Website is accessible at http://${containerIp}"
                     } else {
+                        // Kiểm tra logs của container để tìm lỗi nếu có
+                        sh "docker logs my-localstack-nginx"
                         error "Deployment failed. HTTP status code: ${response}"
                     }
                 }
