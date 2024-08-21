@@ -33,17 +33,17 @@ pipeline {
         }
         stage('Terraform Init') {
             steps {
-                sh 'tflocal init'
+                sh 'terraform init'
             }
         }
         stage('Terraform Plan') {
             steps {
-                sh 'tflocal plan -out=tfplan'
+                sh 'terraform plan -out=tfplan'
             }
         }
         stage('Terraform Apply') {
             steps {
-                sh 'tflocal apply -auto-approve tfplan'
+                sh 'terraform apply -auto-approve tfplan'
             }
         }
         stage('Deploy Web') {
