@@ -32,8 +32,9 @@ pipeline {
         stage('Setup') {
             steps {
                 sh '''
+                    rm -rf awscliv2.zip aws
                     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                    unzip awscliv2.zip
+                    unzip -o awscliv2.zip
                     ./aws/install -i $HOME/.local/aws-cli -b $HOME/.local/bin
                     export PATH=$PATH:$HOME/.local/bin
                     aws --version
