@@ -1,19 +1,16 @@
 FROM localstack/localstack:latest
 
-# Cài đặt Nginx
-RUN apt-get update && apt-get install -y nginx
+# Cài đặt Python
+RUN apt-get update && apt-get install -y python3 python3-pip
 
 # Tạo thư mục cho trang web
 RUN mkdir -p /var/www/html
 
-# Copy file cấu hình Nginx
-COPY default /etc/nginx/sites-available/default
-
-# Copy trang web vào thư mục /var/www/html
+# Sao chép tệp index.html vào thư mục làm việc
 COPY index.html /var/www/html/
 
-# Expose cổng 80 và 4566 (cho LocalStack)
-EXPOSE 80 4566
+# Cài đặt máy chủ HTTP Python
+EXPOSE 8000 4566
 
-# Chạy Nginx và LocalStack
-CMD service nginx start && localstack start --host
+# Chạy máy chủ HTTP Python và LocalStack
+CMD python3 -m http.server 8000 --directory /var/www/html & localstack start --host
