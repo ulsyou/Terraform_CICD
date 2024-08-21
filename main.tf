@@ -13,7 +13,6 @@ provider "aws" {
   }
 }
 
-# Tạo bucket S3 trên LocalStack
 resource "aws_s3_bucket" "website_bucket" {
   bucket = "my-website-bucket"
   acl    = "public-read"
@@ -24,7 +23,6 @@ resource "aws_s3_bucket" "website_bucket" {
   }
 }
 
-# Tạo đối tượng S3 (index.html) trên LocalStack
 resource "aws_s3_bucket_object" "index_html" {
   bucket = aws_s3_bucket.website_bucket.bucket
   key    = "index.html"
@@ -32,7 +30,6 @@ resource "aws_s3_bucket_object" "index_html" {
   acl    = "public-read"
 }
 
-# Tạo CloudFront distribution giả trên LocalStack
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
     domain_name = aws_s3_bucket.website_bucket.bucket_domain_name
