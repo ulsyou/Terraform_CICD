@@ -21,7 +21,7 @@ pipeline {
                         apt-get update && apt-get install -y python3-pip
                     fi
 
-                    pip install terraform-local awscli-local
+                    pip install terraform-local awscli
 
                     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                     unzip -o awscliv2.zip
@@ -51,8 +51,8 @@ pipeline {
                 script {
                     sh '''
                         echo "Hello from LocalStack S3 Bucket" > index.html
-                        tflocal s3 mb s3://my-bucket
-                        tflocal s3 cp index.html s3://my-bucket/index.html
+                        aws --endpoint-url=http://localhost:4566 s3 mb s3://my-website-bucket
+                        aws --endpoint-url=http://localhost:4566 s3 cp index.html s3://my-website-bucket/index.html
                     '''
                     
                     echo "Website deployed to S3. Access it via CloudFront or S3 URL"
