@@ -29,6 +29,11 @@ pipeline {
                 }
             }
         }
+        stage('Setup') {
+            steps {
+                sh 'pip install awscli-local'
+            }
+        }
         stage('Terraform Init') {
             steps {
                 sh 'terraform init'
@@ -47,18 +52,20 @@ pipeline {
         stage('Deploy Web') {
             steps {
                 script {
-                    def instanceIp = sh(script: "aws ec2 describe-instances --filters 'Name=tag:Name,Values=web-instance' --query 'Reservations[].Instances[].PublicIpAddress' --output text", returnStdout: true).trim()
-                    sh "docker cp index.html ${instanceIp}:/var/www/html/"
+                    def instanceIp = sh(script: "awslocal ec2 describe-instances --filters 'Name=tag:Name,Values=web-instance' --query 'Reservations[].Instances[].PrivateIpAddress' --output text", returnStdout: true).trim()
+                    echo "Instance IP: ${instanceIp}"
+                    sh "docker cp index.html ${DOCKER_IMAGE_NAME}:/var/www/html/"
                 }
             }
         }
+        
         stage('Test Deployment') {
             steps {
                 script {
-                    def instanceIp = sh(script: "aws ec2 describe-instances --filters 'Name=tag:Name,Values=web-instance' --query 'Reservations[].Instances[].PublicIpAddress' --output text", returnStdout: true).trim()
-                    def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${instanceIp}", returnStdout: true).trim()
+                    def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_IMAGE_NAME}", returnStdout: true).trim()
+                    def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${containerIp}", returnStdout: true).trim()
                     if (response == "200") {
-                        echo "Deployment successful! Website is accessible at http://${instanceIp}"
+                        echo "Deployment successful! Website is accessible at http://${containerIp}"
                     } else {
                         error "Deployment failed. HTTP status code: ${response}"
                     }
