@@ -5,6 +5,7 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
         DOCKER_IMAGE_NAME = 'my-localstack-nginx'
+        PATH = "$HOME/.local/bin:$PATH" // Cập nhật PATH để tìm AWS CLI
     }
     stages {
         stage('Checkout') {
@@ -29,14 +30,13 @@ pipeline {
                 }
             }
         }
-        stage('Setup') {
+        stage('Setup AWS CLI') {
             steps {
                 sh '''
-                    rm -rf awscliv2.zip aws
                     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
                     unzip -o awscliv2.zip
                     ./aws/install -i $HOME/.local/aws-cli -b $HOME/.local/bin
-                    export PATH=$PATH:$HOME/.local/bin
+                    export PATH=$HOME/.local/bin:$PATH
                     aws --version
                 '''
             }
