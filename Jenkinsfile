@@ -73,6 +73,9 @@ pipeline {
                     
                     // In ra địa chỉ IP và thông báo
                     echo "Website deployed. You can access it at http://${containerIp}"
+
+                    // Kiểm tra log container
+                    sh "docker logs ${DOCKER_IMAGE_NAME}"
                 }
             }
         }
