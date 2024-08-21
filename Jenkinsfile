@@ -44,12 +44,21 @@ pipeline {
                 sh 'terraform apply -auto-approve tfplan'
             }
         }
+        stage('Deploy Web') {
+            steps {
+                script {
+                    def instanceIp = sh(script: "aws ec2 describe-instances --filters 'Name=tag:Name,Values=web-instance' --query 'Reservations[].Instances[].PublicIpAddress' --output text", returnStdout: true).trim()
+                    sh "docker cp index.html ${instanceIp}:/var/www/html/"
+                }
+            }
+        }
         stage('Test Deployment') {
             steps {
                 script {
-                    def response = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:4566', returnStdout: true).trim()
+                    def instanceIp = sh(script: "aws ec2 describe-instances --filters 'Name=tag:Name,Values=web-instance' --query 'Reservations[].Instances[].PublicIpAddress' --output text", returnStdout: true).trim()
+                    def response = sh(script: "curl -s -o /dev/null -w '%{http_code}' http://${instanceIp}", returnStdout: true).trim()
                     if (response == "200") {
-                        echo "Deployment successful! Website is accessible."
+                        echo "Deployment successful! Website is accessible at http://${instanceIp}"
                     } else {
                         error "Deployment failed. HTTP status code: ${response}"
                     }
