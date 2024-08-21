@@ -32,6 +32,7 @@ pipeline {
         stage('Setup') {
             steps {
                 sh 'pip install awscli-local'
+                sh 'pip install awscli'
             }
         }
         stage('Terraform Init') {
@@ -52,7 +53,12 @@ pipeline {
         stage('Deploy Web') {
             steps {
                 script {
-                    def instanceIp = sh(script: "awslocal ec2 describe-instances --filters 'Name=tag:Name,Values=web-instance' --query 'Reservations[].Instances[].PrivateIpAddress' --output text", returnStdout: true).trim()
+                    def instanceIp = sh(script: """
+                        aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
+                        --filters 'Name=tag:Name,Values=web-instance' \
+                        --query 'Reservations[].Instances[].PrivateIpAddress' \
+                        --output text
+                    """, returnStdout: true).trim()
                     echo "Instance IP: ${instanceIp}"
                     sh "docker cp index.html ${DOCKER_IMAGE_NAME}:/var/www/html/"
                 }
@@ -80,4 +86,3 @@ pipeline {
         }
     }
 }
-
