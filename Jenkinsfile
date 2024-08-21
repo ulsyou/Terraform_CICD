@@ -25,17 +25,19 @@ pipeline {
                     sh "docker stop ${DOCKER_IMAGE_NAME} || true"
                     sh "docker rm ${DOCKER_IMAGE_NAME} || true"
                     sh "docker run -d --name ${DOCKER_IMAGE_NAME} -p 80:80 -p 4566:4566 ${DOCKER_IMAGE_NAME}"
-                    sh "sleep 60"
+                    sh "sleep 30"
                 }
             }
         }
         stage('Setup') {
             steps {
-                sh 'pip install awscli-local'
-                sh 'pip install awscli'
-                sh 'curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"'
-                sh 'unzip awscliv2.zip'
-                sh 'sudo ./aws/install'
+                sh '''
+                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                    unzip awscliv2.zip
+                    ./aws/install -i $HOME/.local/aws-cli -b $HOME/.local/bin
+                    export PATH=$PATH:$HOME/.local/bin
+                    aws --version
+                '''
             }
         }
         stage('Check AWS CLI') {
@@ -63,7 +65,7 @@ pipeline {
             steps {
                 script {
                     def instanceIp = sh(script: """
-                        /usr/local/bin/aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
+                        aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
                         --filters 'Name=tag:Name,Values=web-instance' \
                         --query 'Reservations[].Instances[].PrivateIpAddress' \
                         --output text
