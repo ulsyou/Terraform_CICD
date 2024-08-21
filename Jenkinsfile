@@ -33,6 +33,15 @@ pipeline {
             steps {
                 sh 'pip install awscli-local'
                 sh 'pip install awscli'
+                sh 'curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"'
+                sh 'unzip awscliv2.zip'
+                sh 'sudo ./aws/install'
+            }
+        }
+        stage('Check AWS CLI') {
+            steps {
+                sh 'echo $PATH'
+                sh 'which aws || echo "AWS CLI not found"'
             }
         }
         stage('Terraform Init') {
@@ -54,7 +63,7 @@ pipeline {
             steps {
                 script {
                     def instanceIp = sh(script: """
-                        aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
+                        /usr/local/bin/aws --endpoint-url=http://localhost:4566 ec2 describe-instances \
                         --filters 'Name=tag:Name,Values=web-instance' \
                         --query 'Reservations[].Instances[].PrivateIpAddress' \
                         --output text
@@ -64,7 +73,6 @@ pipeline {
                 }
             }
         }
-        
         stage('Test Deployment') {
             steps {
                 script {
