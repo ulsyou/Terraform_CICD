@@ -8,45 +8,74 @@ provider "aws" {
   skip_requesting_account_id  = true
 
   endpoints {
-    ec2 = "http://localhost:4566"
-    iam = "http://localhost:4566"
+    s3         = "http://localhost:4566"
+    cloudfront = "http://localhost:4566"
   }
 }
 
-resource "aws_security_group" "web_sg" {
-  name        = "web-sg"
-  description = "Security group for web instances"
+# Tạo bucket S3 trên LocalStack
+resource "aws_s3_bucket" "website_bucket" {
+  bucket = "my-website-bucket"
+  acl    = "public-read"
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  website {
+    index_document = "index.html"
+    error_document = "index.html"
   }
 }
 
-resource "aws_instance" "web_instance" {
-  ami           = "ami-12345678"
-  instance_type = "t2.micro"
-  security_groups = [aws_security_group.web_sg.name]
+# Tạo đối tượng S3 (index.html) trên LocalStack
+resource "aws_s3_bucket_object" "index_html" {
+  bucket = aws_s3_bucket.website_bucket.bucket
+  key    = "index.html"
+  source = "index.html"
+  acl    = "public-read"
+}
+
+# Tạo CloudFront distribution giả trên LocalStack
+resource "aws_cloudfront_distribution" "s3_distribution" {
+  origin {
+    domain_name = aws_s3_bucket.website_bucket.bucket_domain_name
+    origin_id   = aws_s3_bucket.website_bucket.bucket
+  }
+
+  enabled             = true
+  is_ipv6_enabled     = true
+  default_root_object = "index.html"
+
+  default_cache_behavior {
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = aws_s3_bucket.website_bucket.bucket
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 3600
+    max_ttl                = 86400
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
 
   tags = {
-    Name = "web-instance"
+    Name = "my-cloudfront-distribution"
   }
-
-  user_data = <<-EOF
-              #!/bin/bash
-              echo "Hello from LocalStack EC2 instance" > /var/www/html/index.html
-              EOF
 }
 
-output "instance_ip" {
-  value = aws_instance.web_instance.private_ip
+output "cloudfront_url" {
+  value = aws_cloudfront_distribution.s3_distribution.domain_name
 }

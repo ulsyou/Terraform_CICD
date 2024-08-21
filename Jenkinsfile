@@ -4,8 +4,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
-        DOCKER_IMAGE_NAME = 'my-localstack-python'
-        PATH = "$HOME/.local/bin:$PATH"
+        PATH = "$HOME/.local/bin:$PATH" 
     }
     stages {
         stage('Checkout') {
@@ -13,19 +12,10 @@ pipeline {
                 git 'https://github.com/ulsyou/Terraform_CICD'
             }
         }
-        stage('Build Docker Image') {
+        stage('Run LocalStack') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE_NAME}")
-                }
-            }
-        }
-        stage('Run LocalStack Container') {
-            steps {
-                script {
-                    sh "docker stop ${DOCKER_IMAGE_NAME} || true"
-                    sh "docker rm ${DOCKER_IMAGE_NAME} || true"
-                    sh "docker run -d --name ${DOCKER_IMAGE_NAME} -p 8000:8000 -p 4566:4566 ${DOCKER_IMAGE_NAME}"
+                    sh "docker-compose up -d"
                     sh "sleep 30"
                 }
             }
@@ -41,43 +31,33 @@ pipeline {
                 '''
             }
         }
-        stage('Check AWS CLI') {
-            steps {
-                sh 'echo $PATH'
-                sh 'which aws || echo "AWS CLI not found"'
-            }
-        }
         stage('Terraform Init') {
             steps {
-                sh 'terraform init'
+                sh 'tflocal init'
             }
         }
         stage('Terraform Plan') {
             steps {
-                sh 'terraform plan -out=tfplan'
+                sh 'tflocal plan -out=tfplan'
             }
         }
         stage('Terraform Apply') {
             steps {
-                sh 'terraform apply -auto-approve tfplan'
+                sh 'tflocal apply -auto-approve tfplan'
             }
         }
-        stage('Deploy') {
+        stage('Deploy Web') {
             steps {
                 script {
-                    def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_IMAGE_NAME}", returnStdout: true).trim()
-                    
-                    echo "Website deployed at http://${containerIp}:8000"
-
-                    sh "docker logs ${DOCKER_IMAGE_NAME}"
+                    def cloudfrontUrl = sh(script: "tflocal output -raw cloudfront_url", returnStdout: true).trim()
+                    echo "Website deployed. You can access it at http://${cloudfrontUrl}"
                 }
             }
         }
     }
     post {
         always {
-            sh "docker stop ${DOCKER_IMAGE_NAME} || true"
-            sh "docker rm ${DOCKER_IMAGE_NAME} || true"
+            sh "docker-compose down || true"
         }
     }
 }
