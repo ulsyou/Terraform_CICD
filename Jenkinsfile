@@ -4,8 +4,8 @@ pipeline {
         AWS_ACCESS_KEY_ID = 'test'
         AWS_SECRET_ACCESS_KEY = 'test'
         AWS_DEFAULT_REGION = 'us-east-1'
-        DOCKER_IMAGE_NAME = 'my-localstack-nginx'
-        PATH = "$HOME/.local/bin:$PATH" // Cập nhật PATH để tìm AWS CLI
+        DOCKER_IMAGE_NAME = 'my-localstack-python'
+        PATH = "$HOME/.local/bin:$PATH"
     }
     stages {
         stage('Checkout') {
@@ -25,7 +25,7 @@ pipeline {
                 script {
                     sh "docker stop ${DOCKER_IMAGE_NAME} || true"
                     sh "docker rm ${DOCKER_IMAGE_NAME} || true"
-                    sh "docker run -d --name ${DOCKER_IMAGE_NAME} -p 80:80 -p 4566:4566 ${DOCKER_IMAGE_NAME}"
+                    sh "docker run -d --name ${DOCKER_IMAGE_NAME} -p 8000:8000 -p 4566:4566 ${DOCKER_IMAGE_NAME}"
                     sh "sleep 30"
                 }
             }
@@ -68,11 +68,8 @@ pipeline {
                     // Lấy IP của container
                     def containerIp = sh(script: "docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ${DOCKER_IMAGE_NAME}", returnStdout: true).trim()
                     
-                    // Sao chép index.html vào container
-                    sh "docker cp index.html ${DOCKER_IMAGE_NAME}:/var/www/html/"
-                    
                     // In ra địa chỉ IP và thông báo
-                    echo "Website deployed. You can access it at http://${containerIp}"
+                    echo "Website deployed. You can access it at http://${containerIp}:8000"
 
                     // Kiểm tra log container
                     sh "docker logs ${DOCKER_IMAGE_NAME}"
