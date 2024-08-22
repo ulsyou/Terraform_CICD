@@ -13,22 +13,30 @@ pipeline {
                 git 'https://github.com/ulsyou/Terraform_CICD'
             }
         }
-        stage('Install tflocal and AWS CLI') {
+        stage('Cache and Install Dependencies') {
             steps {
-                sh '''
-                    if ! command -v pip &> /dev/null
-                    then
-                        apt-get update && apt-get install -y python3-pip
-                    fi
+                // Cache the tools installation
+                cache(path: '/var/lib/jenkins/.local/bin', key: 'tools-cache', restoreKeys: ['tools-cache']) {
+                    sh '''
+                        if ! command -v pip &> /dev/null
+                        then
+                            apt-get update && apt-get install -y python3-pip
+                        fi
 
-                    pip install terraform-local awscli
+                        if ! command -v tflocal &> /dev/null || ! command -v aws &> /dev/null
+                        then
+                            pip install terraform-local awscli
 
-                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                    unzip -o awscliv2.zip
-                    ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
+                            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                            unzip -o awscliv2.zip
+                            ./aws/install -i /var/lib/jenkins/.local/aws-cli -b /var/lib/jenkins/.local/bin --update
 
-                    aws --version
-                '''
+                            aws --version
+                        else
+                            echo "Tools are already installed and cached."
+                        fi
+                    '''
+                }
             }
         }
         stage('Start LocalStack') {
@@ -70,8 +78,7 @@ pipeline {
     }
     post {
         always {
-            sh "docker stop ${DOCKER_IMAGE_NAME} || true"
-            sh "docker rm ${DOCKER_IMAGE_NAME} || true"
+            sh "docker-compose -f docker-compose.yml down"
         }
     }
 }
