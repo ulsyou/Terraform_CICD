@@ -8,7 +8,7 @@ pipeline {
         PATH = "$HOME/.local/bin:$PATH" 
     }
     stages {
-        stage('Parallel Execution') {
+        stage('Checkout and Install Dependencies') {
             parallel {
                 stage('Checkout') {
                     steps {
