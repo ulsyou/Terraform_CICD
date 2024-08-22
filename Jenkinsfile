@@ -69,4 +69,14 @@ pipeline {
         
                         aws --endpoint-url=http://localhost:4566 s3 cp index.html s3://my-website-bucket/index.html
                     '''
-                    echo "Website deployed to S3 at URL: http://localhost:456
+                    echo 'Website deployed to S3 at URL: http://localhost:4566/my-website-bucket/index.html'
+                }
+            }
+        }
+    }
+    post {
+        always {
+            sh "docker-compose -f docker-compose.yml down"
+        }
+    }
+}
